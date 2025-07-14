@@ -1,0 +1,85 @@
+import enum
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Enum, Text
+from sqlalchemy.orm import relationship
+
+from sqlalchemy_utils import URLType
+
+from ..db_setup import Base
+from .user import User
+from .mixins import Timestamp
+
+
+class ContentType(enum.Enum):
+    lesson = 1
+    quiz = 2
+    assigment = 3
+  
+    
+class Course(Timestamp, Base):
+    __tablename__ = "courses"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    created_by = relationship(User)
+    sections = relationship("Section", back_populates="course", uselist=False)
+    student_courses = relationship("StudentCourse", back_populates="courses")
+    
+
+class Section(Timestamp, Base):
+    __tablename__ = "sections"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=True)
+    description = Column(Text, nullable=True)  
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)
+
+    course = relationship("Course", back_populates="sections")
+    content_blocks = relationship("ContentBlock", back_populates="section")
+
+
+class ContentBlock(Timestamp, Base):
+    __tablename__ = "content_blocks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    type = Column(Enum(ContentType))
+    url = Column(URLType, nullable=True)
+    content = Column(Text, nullable=True)
+    
+    section = relationship("Section", back_populates="content_blocks")
+    completed_section_blocks = relationship("CompletedContentBlock", back_populates="content_blocks")
+    
+    
+class StudentCourse(Timestamp, Base):
+    """
+    Student ca be assignrd to courses
+    """
+    
+    __tablename__ = "student_courses"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    content_block_id = Column(Integer, ForeignKey("content_blocks.id"), nullable=False)
+    url = Column(URLType, nullable=True)
+    feedback = Column(Text, nullable=True)
+    grade = Column(Integer, default=0)
+    
+    student = relationship(User, back_populates="student_content_blocks")
+    content_block = relationship(ContentBlock, back_populates="completed_content_blocks")
+
+
+
+
+
+
+
+
+
+
+
+
+    
