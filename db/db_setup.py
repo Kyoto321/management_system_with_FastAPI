@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 
-SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:wertyuio12345678@localhost/fastApi_SMS"
+SQLALCHEMY_DATABASE_URL = "connect to db"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={}, future=True
@@ -16,7 +16,7 @@ SessionLocal = sessionmaker(
 
 
 #ASYNC ENGINE DATABASE CONNECTION
-ASYNC_SQLALCHEMY_DATABASE_URL = "postgresql+asyncpg://postgres:wertyuio12345678@localhost/fastApi_SMS"
+ASYNC_SQLALCHEMY_DATABASE_URL = "connect to db"
 
 async_engine = create_async_engine(ASYNC_SQLALCHEMY_DATABASE_URL)
 
