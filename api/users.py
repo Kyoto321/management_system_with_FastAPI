@@ -1,32 +1,45 @@
 from typing import Optional, List
-from fastapi import Path, Query, APIRouter
-from pydantic import BaseModel
+import fastapi
+from fastapi import Depends, HTTPException, APIRouter
+from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from api.utils.users import get_user, get_user_by_email, get_users, create_user
+from api.utils.courses import get_user_courses
+from db.db_setup import get_db, async_get_db
+from pydantic_schemas.user import UserCreate, User
+from pydantic_schemas.course import Course
 
 router = APIRouter()
 
-users = []
-
-class User(BaseModel):
-    email: str
-    is_active: bool
-    bio: Optional[str]
-
-# @app.get("/")
-# async def root():
-#     return {"message": "Hello World"}
 
 @router.get("/users", response_model=List[User])
-async def get_users():
+async def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    # connect database
+    users = get_users(db, skip=skip, limit=limit)
     return users
+    
+    
+@router.post("/create_newusers", response_model=User, status_code=201)
+async def create_new_users(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = get_user_by_email(db=db, email=user.email)
+    if db_user:
+        raise HTTPException(status_code=404, detail="Email already registered")
+    return create_user(db=db, user=user)
 
-@router.post("/create_users")
-async def create_users(user: User):
-    users.append(user)
-    return "Success"
 
-@router.get("/users/{id}")
-async def get_user(
-    id: int = Path(..., description="Provide the user Id", gt=2),
-    q: str = Query(None, max_length=5)
-    ):
-    return {"users": users[id], "query": q }
+@router.get("/users/{user_id}", response_model=User)
+async def read_user(user_id: int, db: AsyncSession = Depends(async_get_db)):
+    db_user = await get_user(db=db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
+
+
+@router.get("users/{user_id}/courses", response_model=List[Course])
+async def read_user_courses(user_id: int, db:Session = Depends(get_db)):
+    courses = get_user_courses(usr_id = user_id, db=db)
+    return courses
+
+
+
+
